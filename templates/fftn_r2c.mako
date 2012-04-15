@@ -21,7 +21,8 @@ PyObject* SJSfftn_R2C(PyObject* TR)
     int i, ntot, nd;
     nd=${num_dims};
     int *ndimTR = (int*) malloc(nd*sizeof(int));
-    ndimTR = (int*) PyArray_DIMS((PyArrayObject*)TR);
+    npy_intp *ndimTR_np = (npy_intp*) PyArray_DIMS((PyArrayObject*)TR);
+	for(i=0;i<nd;i++) ndimTR[i]=(int)ndimTR_np[i];
     for(i=0,ntot=1;i<nd;i++)ntot *= (*(ndimTR+i));
 
 //
@@ -50,7 +51,7 @@ PyObject* SJSfftn_R2C(PyObject* TR)
 // pack data into a numpy array object
 //
     PyArrayObject* PyTmp = (PyArrayObject*)PyArray_SimpleNewFromData(nd,
-                               ndimTR, NPY_CDOUBLE, dFC);
+                               ndimTR_np, NPY_CDOUBLE, dFC);
     Py_INCREF(PyTmp);
     
 // free space and cleanup plans (TGM: I need to find a way to save 

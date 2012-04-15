@@ -9,7 +9,11 @@ import numpy as np
 #  the path to the template directory to modules calling this
 #  module.
 #
-installDir= "/home/vagrant/fftlib"
+import inspect, os
+this_file = inspect.currentframe().f_code.co_filename
+installDir = os.path.dirname(this_file)
+
+print this_file
 
 class lib(object):
     

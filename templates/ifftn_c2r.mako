@@ -25,8 +25,10 @@ PyObject* SJSifftn_C2R(PyObject* FC)
     int i, ntot, nd;
     nd=${num_dims};
     int *ndimFC = (int*) malloc(nd*sizeof(int));
-    ndimFC = (int*) PyArray_DIMS((PyArrayObject*)FC);
+    npy_intp *ndimFC_np = (npy_intp*) PyArray_DIMS((PyArrayObject*)FC);
+    for(i=0;i<nd;i++) ndimFC[i]=(int)ndimFC_np[i];
     for(i=0,ntot=1;i<nd;i++)ntot *= (*(ndimFC+i));
+
 
 //
 // allocate space for the output, double array from FFTW
@@ -47,7 +49,7 @@ PyObject* SJSifftn_C2R(PyObject* FC)
 // pack data into a numpy array object
 //
     PyArrayObject* PyTmp = (PyArrayObject*)PyArray_SimpleNewFromData(nd,
-                               ndimFC, NPY_DOUBLE, dTR);
+                               ndimFC_np, NPY_DOUBLE, dTR);
     Py_INCREF(PyTmp);
     
 // free space and cleanup plans (TGM: I need to find a way to save 
