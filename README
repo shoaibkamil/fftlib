@@ -1,0 +1,103 @@
+
+This directory support the fftlib specializer for interfacing
+to the FTDOCK program.  Contents include:
+
+    fftlib.py         SEJITS enabled FFTW interface module
+    flush_cache       A script to flush asp caches
+    ftdock_Grid3D.py  The only Ftdock file I needed to change
+    pyfftlib.py       A "plug compatible" numpy version of fftlib.py
+    README            This README file
+    run_tests.sh      A shell script to test fftlib (uses asp)
+    templates         The template files used in fftlib.py
+    tests             programs to test fftlib, numpy and FFTW
+
+The rest of this file provides details about the fftlib specializer
+and how to use these modules in Ftdock
+
+-------------------------------------------
+
+fftlib: The FFTW interface module
+
+Exports two modules:  fftlib.py and pyfftlib.py
+
+The FFTW export specializers is sort of working.  I use the 
+modifier "sort of" since there are several minor issues I want 
+to resolve.   They are fully described in the comments to the 
+code so we can be sure to fix them later.  The only one that the 
+user of this module needs to be aware of is the fact I must
+put the location of the directory where the template file 
+is located as a string in the fftlib module (file fftlib.py): 
+
+    installDir="\home\vagrant\fftlib"
+
+There has to be a way around this, but I don't know what it is.
+Of course, I also had to modify PYTHONPATH in the runscript for 
+ftdock to tell it where to find my fft library
+
+    #!/bin/bash
+    PYTHONPATH=`pwd`:../allcomb:../fftlib:../asp:${PYTHONPATH} python 
+    ftdock_main.py --m1 1CHG.pdb --m2 1HPT.pdb --gr 8.0 --st 8.0 
+    --ar 180.00 --ts 5
+
+There are two modules in fftlib
+
+     fftlib.py    Calls fftw for forward and inverse ffts
+     pyfftlib.py  Calls the analogous numpy fft routines
+
+They export the same interface so in code you just have to 
+change the import line to get one or the other.  For example
+in ftdock_Grid3D.py I added the line
+
+     import fftlib as fft
+
+You can recover the numpy fft solution just by changing that to
+
+    import pyfftlib as fft
+
+The other change I had to make to ftdock_Grid3D.py is in the calls
+to the FFTs themselves.  Instead of just calling numpy
+
+     return np.fft.fftn(self.grid)
+
+I had to explicit insert the library object
+
+     return fft.lib().fftn_R2C(self.grid)
+
+Like wise for the inverse fft I typed
+
+     return np.real_if_close(fftlib().ifftn_C2R(self.grid),tol=100000)
+
+Note since I'm not doing an explicit complex to real fft I don't need
+the "real_if_close" function.  I leave it there, however to support
+easy transition between the all-numpy and the FFTW versions of 
+the fftlib modules.
+
+Currently, I am using the un-normalized FFTs from fftw.  This does 
+change the answers a bit, but I think in a way that is not relevant
+to the function of the application.  When you run ftdock with the
+all numpy interface to fftlib (i.e. pyfftlib) I get the following 
+results
+
+Begin...
+Finished reading PDB:  hydrolase zymogen (serine proteinase)   01-mar-75   1chg
+Finished reading PDB:  serine protease inhibitor
+(31000.000000000011, 4, 7, 4, 0.0, 1.0, 0.0)
+(31000.000000000007, 5, 4, 2, 0.0, -1.0, 1.0)
+(30000.000000000007, 4, 7, 4, 0.0, 1.0, -1.0)
+(28000.000000000033, 5, 5, 2, -1.0, 0.0, -1.0)
+(28000.0, 4, 6, 3, -1.0, -1.0, 1.0)
+End...
+
+This compares to the answer with the "pyfftlib" module
+
+Begin...
+Finished reading PDB:  hydrolase zymogen (serine proteinase)   01-mar-75   1chg
+Finished reading PDB:  serine protease inhibitor
+(31.000000000000068, 4, 7, 4, 0.0, 1.0, 0.0)
+(30.999999999999989, 5, 4, 2, 0.0, -1.0, 1.0)
+(30.000000000000057, 4, 7, 4, 0.0, 1.0, -1.0)
+(28.000000000000021, 5, 5, 2, -1.0, 0.0, -1.0)
+(27.999999999999972, 4, 6, 3, -1.0, -1.0, 1.0)
+End...
+
+Let me know if you need me to normalize the ffts.

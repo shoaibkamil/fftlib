@@ -1,0 +1,47 @@
+
+// ifftn_C2R ... find inverse FFT of in input complex numpy array 
+//              (frequency domain complex or FC) and return a real 
+//              numpy array time domain real or TR).
+//
+//              Note: the complex array FC  is assumed to have been
+//              produced by finding the forward transform of a
+//              real time domain array.
+
+PyObject* SJSifftn_C2R(PyObject* FC, PyObject* TR) 
+{
+
+// Setup C pointers to data in the input numpy array. 
+    double *dFC, *dTR; 
+    dFC = (double*) PyArray_DATA(PyArray_GETCONTIGUOUS((PyArrayObject*)FC));
+    dTR = (double*) PyArray_DATA(PyArray_GETCONTIGUOUS((PyArrayObject*)TR));
+
+// I believe PyArray_DIMS will give me an array with the size 
+// of each dimension. But I can't find anywhere a macro to tell 
+// me how many dimensions there are!!!!  So I will hardwire to 
+// three for now.  But I am sure there is a way to extract this
+// information from the Python Array type.
+//
+    int ntot, nd = 3;
+    int * ndimFC = (int *) malloc(nd*sizeof(int));
+    ndimdFC = (int*) PyArray_DIMS((PyArrayObject*)FC);
+    for(i=0,ntot=1;i<3;i++)ntot *= (*(ndimFC+i));
+
+// setup FFTW Plan (use c2r for arbitrary number of dimensions)
+     fftw_plan pl_inverse = fftw_plan_dft_c2r(nd, ndimFC, dFC,  
+                                              dTR, FFTW_ESTIMATE);
+
+// compute the fft
+   fftw_execute(pl_inverse);
+
+   fftw_destroy(pl_inverse);
+   fftw_cleanup();
+
+// return an error code (0 for now ... but we have it in place should 
+/  we need to return errors in the future).
+
+   long retval = 0;    // use for future error codes.
+   PyObject* PyRetval = PyInt_FromLong(retval);  
+   Py_INCREF(PyRetval);
+
+   return PyRetval;
+}

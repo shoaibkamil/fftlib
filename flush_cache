@@ -1,0 +1,3 @@
+#!/bin/bash
+
+rm -rf /tmp/asp_cache
